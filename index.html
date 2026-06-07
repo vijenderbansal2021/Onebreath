@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d1117" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="One Breath" />
+  <meta name="description" content="The simplest meditation app. Open. Tap. Breathe." />
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
+  <title>One Breath</title>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Jost:wght@200;300;400&display=swap');
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #0d1117;
+      --accent: #7eb8c9;
+      --accent2: #a8d5c2;
+      --text: #d4dde8;
+      --muted: rgba(180,200,220,0.38);
+      --border: rgba(180,200,220,0.09);
+      --glow: rgba(126,184,201,0.18);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Jost', sans-serif;
+      font-weight: 300;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── AMBIENT ── */
+    #ambient {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 50%, rgba(126,184,201,0.055) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 80% 20%, rgba(168,213,194,0.03) 0%, transparent 60%);
+    }
+
+    /* ── SCREENS ── */
+    .screen {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column; align-items: center;
+      padding: calc(var(--safe-top) + 56px) 32px calc(var(--safe-bottom) + 40px);
+      z-index: 1;
+      opacity: 0; pointer-events: none;
+      transform: translateY(16px);
+      transition: opacity 0.55s cubic-bezier(.4,0,.2,1), transform 0.55s cubic-bezier(.4,0,.2,1);
+      will-change: opacity, transform;
+    }
+    .screen.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+
+    /* ═══════════════════════════════
+       HOME
+    ═══════════════════════════════ */
+    .logo {
+      font-size: 11px;
+      letter-spacing: 0.42em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 300;
+    }
+
+    .streak-ring {
+      margin-top: 36px;
+      width: 88px; height: 88px; border-radius: 50%;
+      border: 1px solid rgba(168,213,194,0.22);
+      box-shadow: 0 0 0 8px rgba(168,213,194,0.04), 0 0 0 18px rgba(168,213,194,0.02);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .streak-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 34px; font-weight: 300;
+      color: var(--accent2); line-height: 1;
+    }
+    .streak-lbl {
+      font-size: 8px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--muted); margin-top: 3px;
+    }
+
+    .section-label {
+      font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase;
+      color: var(--muted); margin-top: 38px; margin-bottom: 12px;
+      align-self: flex-start;
+    }
+
+    .dur-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%; }
+    .dur-pill {
+      padding: 7px 14px; border-radius: 24px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px; letter-spacing: 0.06em;
+      cursor: pointer; font-family: 'Jost', sans-serif; font-weight: 300;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      -webkit-appearance: none;
+    }
+    .dur-pill.sel {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(126,184,201,0.08);
+    }
+
+    /* Start CTA */
+    .start-wrap { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+    .start-btn {
+      width: 152px; height: 152px; border-radius: 50%;
+      background: transparent;
+      border: 1px solid rgba(126,184,201,0.28);
+      box-shadow: 0 0 0 10px rgba(126,184,201,0.05), 0 0 0 22px rgba(126,184,201,0.025);
+      cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+      color: var(--text);
+      transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+      animation: home-pulse 4s ease-in-out infinite;
+      -webkit-appearance: none;
+    }
+    .start-btn:active { background: rgba(126,184,201,0.07); border-color: rgba(126,184,201,0.6); }
+    .start-btn-label {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 15px; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 300;
+    }
+    .start-btn-dur { font-size: 10px; letter-spacing: 0.18em; color: var(--muted); }
+
+    @keyframes home-pulse {
+      0%, 100% { box-shadow: 0 0 0 10px rgba(126,184,201,0.05), 0 0 0 22px rgba(126,184,201,0.025); }
+      50% { box-shadow: 0 0 0 14px rgba(126,184,201,0.07), 0 0 0 28px rgba(126,184,201,0.03); }
+    }
+
+    .stats-mini { display: flex; gap: 28px; align-items: center; }
+    .stat-mini { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .stat-mini-val {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px; font-weight: 300; color: var(--text);
+    }
+    .stat-mini-lbl { font-size: 7.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+    .stat-div { width: 1px; height: 28px; background: var(--border); }
+
+    /* ═══════════════════════════════
+       MEDITATION
+    ═══════════════════════════════ */
+    #progress-bar {
+      position: fixed; top: 0; left: 0;
+      height: 2px; width: 0%;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      box-shadow: 0 0 10px rgba(126,184,201,0.5);
+      transition: width 1s linear;
+      z-index: 100; border-radius: 0 2px 2px 0;
+    }
+
+    .med-time {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 72px; font-weight: 300;
+      letter-spacing: -0.02em; line-height: 1;
+      color: var(--text); margin-top: 16px;
+    }
+    .med-phase-label {
+      font-size: 9px; letter-spacing: 0.32em; text-transform: uppercase;
+      color: var(--muted); margin-top: 10px;
+      transition: opacity 0.4s;
+    }
+
+    /* Orb */
+    .orb-area {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 20px;
+    }
+    .orb-outer {
+      width: 160px; height: 160px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(126,184,201,0.1);
+      transition: transform 4s ease-in-out, border-color 4s ease-in-out;
+    }
+    .orb {
+      width: 100px; height: 100px; border-radius: 50%;
+      background: radial-gradient(circle at 38% 32%, rgba(126,184,201,0.5), rgba(126,184,201,0.04) 70%);
+      border: 1px solid rgba(126,184,201,0.3);
+      box-shadow: 0 0 40px rgba(126,184,201,0.15), inset 0 0 24px rgba(126,184,201,0.08);
+      transition: transform 4s ease-in-out, opacity 4s ease-in-out, box-shadow 4s ease-in-out;
+    }
+    .orb.inhale, .orb.hold-in {
+      transform: scale(1.4);
+      opacity: 1;
+      box-shadow: 0 0 70px rgba(126,184,201,0.28), inset 0 0 30px rgba(126,184,201,0.12);
+    }
+    .orb.exhale, .orb.hold-out {
+      transform: scale(1);
+      opacity: 0.55;
+      box-shadow: 0 0 24px rgba(126,184,201,0.1);
+    }
+    .breath-word {
+      font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase;
+      color: var(--muted); transition: opacity 0.5s;
+    }
+
+    /* Controls */
+    .med-controls { display: flex; gap: 18px; align-items: center; }
+    .ctrl-btn {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 1px solid var(--border);
+      background: transparent; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 15px;
+      transition: border-color 0.2s, color 0.2s;
+      -webkit-appearance: none;
+    }
+    .ctrl-btn:active { border-color: rgba(126,184,201,0.35); color: var(--accent); }
+    .end-btn {
+      width: auto; padding: 0 18px;
+      font-family: 'Jost', sans-serif; font-weight: 300;
+      font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; border-radius: 24px;
+    }
+
+    /* ═══════════════════════════════
+       DONE
+    ═══════════════════════════════ */
+    .done-icon {
+      margin-top: 40px;
+      width: 80px; height: 80px; border-radius: 50%;
+      border: 1.5px solid rgba(168,213,194,0.38);
+      box-shadow: 0 0 50px rgba(168,213,194,0.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px; color: var(--accent2);
+      animation: pop-in 0.5s cubic-bezier(.175,.885,.32,1.275) forwards;
+    }
+    @keyframes pop-in { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .done-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 36px; font-weight: 300; margin-top: 22px; letter-spacing: 0.04em;
+    }
+    .done-sub {
+      font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase;
+      color: var(--muted); margin-top: 7px;
+    }
+
+    .done-stats { display: flex; gap: 0; margin-top: 44px; width: 100%; justify-content: center; }
+    .done-stat { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
+    .done-stat-val {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 40px; font-weight: 300; color: var(--accent2); line-height: 1;
+    }
+    .done-stat-lbl { font-size: 8px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+    .done-div { width: 1px; background: var(--border); align-self: stretch; margin: 4px 0; }
+
+    .done-btn {
+      margin-top: auto;
+      padding: 15px 54px; border-radius: 32px;
+      border: 1px solid rgba(126,184,201,0.28);
+      background: transparent; cursor: pointer;
+      font-family: 'Jost', sans-serif; font-weight: 300;
+      font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase;
+      color: var(--accent);
+      transition: background 0.2s, border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    .done-btn:active { background: rgba(126,184,201,0.07); border-color: var(--accent); }
+
+    /* ── INSTALL BANNER ── */
+    #install-banner {
+      position: fixed; bottom: calc(var(--safe-bottom) + 16px); left: 16px; right: 16px;
+      background: rgba(20,27,38,0.96);
+      border: 1px solid rgba(126,184,201,0.2);
+      border-radius: 16px; padding: 14px 18px;
+      display: none; align-items: center; gap: 14px;
+      z-index: 200; backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    #install-banner.show { display: flex; }
+    .install-text { flex: 1; font-size: 12px; color: var(--text); line-height: 1.4; }
+    .install-text strong { color: var(--accent2); font-weight: 400; }
+    .install-cta {
+      padding: 8px 16px; border-radius: 20px;
+      background: rgba(126,184,201,0.12); border: 1px solid rgba(126,184,201,0.3);
+      color: var(--accent); font-size: 11px; letter-spacing: 0.1em;
+      cursor: pointer; white-space: nowrap;
+      font-family: 'Jost', sans-serif; font-weight: 300;
+      -webkit-appearance: none;
+    }
+    .install-close {
+      color: var(--muted); font-size: 18px; cursor: pointer; line-height: 1;
+      background: none; border: none; padding: 4px;
+    }
+
+    /* Offline indicator */
+    #offline-pill {
+      position: fixed; top: calc(var(--safe-top) + 12px); left: 50%;
+      transform: translateX(-50%);
+      background: rgba(168,213,194,0.1); border: 1px solid rgba(168,213,194,0.2);
+      border-radius: 20px; padding: 4px 14px;
+      font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent2);
+      display: none; z-index: 200;
+    }
+    body.offline #offline-pill { display: block; }
+  </style>
+</head>
+<body>
+
+<div id="ambient"></div>
+<div id="progress-bar"></div>
+<div id="offline-pill">● offline ready</div>
+
+<!-- ── HOME ── -->
+<div class="screen active" id="screen-home">
+
+  <div class="logo">One Breath</div>
+
+  <div class="streak-ring">
+    <div class="streak-num" id="streak-display">0</div>
+    <div class="streak-lbl">day streak</div>
+  </div>
+
+  <div class="section-label">Duration</div>
+  <div class="dur-row" id="dur-row">
+    <button class="dur-pill" data-min="3">3 min</button>
+    <button class="dur-pill sel" data-min="5">5 min</button>
+    <button class="dur-pill" data-min="10">10 min</button>
+    <button class="dur-pill" data-min="15">15 min</button>
+  </div>
+
+  <div class="start-wrap">
+    <div class="stats-mini">
+      <div class="stat-mini">
+        <div class="stat-mini-val" id="total-sessions-display">0</div>
+        <div class="stat-mini-lbl">sessions</div>
+      </div>
+      <div class="stat-div"></div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" id="total-mins-display">0</div>
+        <div class="stat-mini-lbl">minutes</div>
+      </div>
+    </div>
+
+    <button class="start-btn" id="start-btn">
+      <span class="start-btn-label">Begin</span>
+      <span class="start-btn-dur" id="start-btn-dur">5 minutes</span>
+    </button>
+  </div>
+</div>
+
+<!-- ── MEDITATION ── -->
+<div class="screen" id="screen-med">
+  <div class="med-time" id="med-time">5:00</div>
+  <div class="med-phase-label" id="med-phase-label">get comfortable</div>
+
+  <div class="orb-area">
+    <div class="orb-outer" id="orb-outer">
+      <div class="orb exhale" id="orb"></div>
+    </div>
+    <div class="breath-word" id="breath-word">inhale</div>
+  </div>
+
+  <div class="med-controls">
+    <button class="ctrl-btn" id="pause-btn">⏸</button>
+    <button class="ctrl-btn end-btn" id="end-btn">end</button>
+  </div>
+</div>
+
+<!-- ── DONE ── -->
+<div class="screen" id="screen-done">
+  <div class="done-icon">✓</div>
+  <div class="done-title">Well done.</div>
+  <div class="done-sub">Session complete</div>
+
+  <div class="done-stats">
+    <div class="done-stat">
+      <div class="done-stat-val" id="done-mins">0</div>
+      <div class="done-stat-lbl">minutes</div>
+    </div>
+    <div class="done-div"></div>
+    <div class="done-stat">
+      <div class="done-stat-val" id="done-streak">0</div>
+      <div class="done-stat-lbl">streak</div>
+    </div>
+    <div class="done-div"></div>
+    <div class="done-stat">
+      <div class="done-stat-val" id="done-total">0</div>
+      <div class="done-stat-lbl">sessions</div>
+    </div>
+  </div>
+
+  <button class="done-btn" id="done-btn">Return</button>
+</div>
+
+<!-- Install banner (Android/Chrome) -->
+<div id="install-banner">
+  <div class="install-text"><strong>Add to Home Screen</strong><br>Use One Breath like a native app — offline, no App Store needed.</div>
+  <button class="install-cta" id="install-cta">Install</button>
+  <button class="install-close" id="install-close">×</button>
+</div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────────────
+const STORAGE_KEY = 'onebreath_v1';
+
+function loadState() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    return s ? JSON.parse(s) : { streak: 0, lastDate: null, sessions: 0, totalMins: 0, selectedMin: 5 };
+  } catch { return { streak: 0, lastDate: null, sessions: 0, totalMins: 0, selectedMin: 5 }; }
+}
+
+function saveState(s) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
+}
+
+let state = loadState();
+let selectedMin = state.selectedMin || 5;
+let totalSec = selectedMin * 60;
+let remainSec = totalSec;
+let paused = false;
+let sessionTimer = null;
+let breathTimeout = null;
+let breathPhaseIdx = 0;
+let sessionStartTime = null;
+
+// Breath cycle: inhale 4s → hold 2s → exhale 4s → rest 2s
+const BREATH = [
+  { cls: 'inhale',   word: 'inhale',  dur: 4000 },
+  { cls: 'hold-in',  word: 'hold',    dur: 2000 },
+  { cls: 'exhale',   word: 'exhale',  dur: 4000 },
+  { cls: 'hold-out', word: 'rest',    dur: 2000 },
+];
+
+// ─── DOM ──────────────────────────────────────────────────────────
+const screens = {
+  home: document.getElementById('screen-home'),
+  med:  document.getElementById('screen-med'),
+  done: document.getElementById('screen-done'),
+};
+const $id = id => document.getElementById(id);
+
+// ─── NAVIGATION ──────────────────────────────────────────────────
+function showScreen(name) {
+  Object.entries(screens).forEach(([k, el]) => {
+    el.classList.toggle('active', k === name);
+  });
+}
+
+// ─── STREAK LOGIC ─────────────────────────────────────────────────
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function updateStreak() {
+  const today = todayStr();
+  const last = state.lastDate;
+  if (last === today) return; // already counted today
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  const yStr = yesterday.toISOString().slice(0, 10);
+  state.streak = (last === yStr) ? state.streak + 1 : 1;
+  state.lastDate = today;
+}
+
+// ─── UI UPDATES ───────────────────────────────────────────────────
+function refreshHomeUI() {
+  $id('streak-display').textContent = state.streak;
+  $id('total-sessions-display').textContent = state.sessions;
+  $id('total-mins-display').textContent = state.totalMins;
+  $id('start-btn-dur').textContent = selectedMin + ' minute' + (selectedMin > 1 ? 's' : '');
+}
+
+// ─── DURATION PILLS ───────────────────────────────────────────────
+document.querySelectorAll('.dur-pill').forEach(btn => {
+  if (parseInt(btn.dataset.min) === selectedMin) btn.classList.add('sel');
+  else btn.classList.remove('sel');
+
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dur-pill').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    selectedMin = parseInt(btn.dataset.min);
+    state.selectedMin = selectedMin;
+    saveState(state);
+    $id('start-btn-dur').textContent = selectedMin + ' minute' + (selectedMin > 1 ? 's' : '');
+  });
+});
+
+// ─── TIMER DISPLAY ────────────────────────────────────────────────
+function formatTime(sec) {
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+function updateTimerUI() {
+  $id('med-time').textContent = formatTime(remainSec);
+  const pct = totalSec > 0 ? ((totalSec - remainSec) / totalSec) * 100 : 0;
+  $id('progress-bar').style.width = pct + '%';
+}
+
+// ─── BREATHING ────────────────────────────────────────────────────
+function runBreath(idx) {
+  const phase = BREATH[idx];
+  const orb = $id('orb');
+  orb.className = 'orb ' + phase.cls;
+  $id('breath-word').textContent = phase.word;
+  breathTimeout = setTimeout(() => runBreath((idx + 1) % BREATH.length), phase.dur);
+}
+
+function stopBreath() { clearTimeout(breathTimeout); }
+
+// ─── SESSION ──────────────────────────────────────────────────────
+$id('start-btn').addEventListener('click', startSession);
+
+function startSession() {
+  totalSec = selectedMin * 60;
+  remainSec = totalSec;
+  paused = false;
+  sessionStartTime = Date.now();
+
+  $id('med-phase-label').textContent = 'get comfortable';
+  $id('med-time').textContent = formatTime(remainSec);
+  $id('progress-bar').style.width = '0%';
+  $id('pause-btn').textContent = '⏸';
+
+  showScreen('med');
+
+  clearInterval(sessionTimer);
+  stopBreath();
+
+  // Small delay so user settles before breath starts
+  setTimeout(() => {
+    $id('med-phase-label').textContent = 'breathe gently';
+    runBreath(0);
+  }, 2000);
+
+  sessionTimer = setInterval(() => {
+    if (paused) return;
+    remainSec--;
+    updateTimerUI();
+    if (remainSec <= 0) finishSession(true);
+  }, 1000);
+}
+
+function finishSession(completed) {
+  clearInterval(sessionTimer);
+  stopBreath();
+
+  const elapsed = totalSec - remainSec;
+  const minsLogged = Math.max(1, Math.round(elapsed / 60));
+
+  // Update state
+  updateStreak();
+  state.sessions++;
+  state.totalMins += minsLogged;
+  saveState(state);
+
+  // Done screen
+  $id('done-mins').textContent = minsLogged;
+  $id('done-streak').textContent = state.streak;
+  $id('done-total').textContent = state.sessions;
+
+  refreshHomeUI();
+  showScreen('done');
+}
+
+$id('pause-btn').addEventListener('click', () => {
+  paused = !paused;
+  $id('pause-btn').textContent = paused ? '▶' : '⏸';
+  $id('med-phase-label').textContent = paused ? 'paused' : 'breathe gently';
+});
+
+$id('end-btn').addEventListener('click', () => finishSession(false));
+$id('done-btn').addEventListener('click', () => showScreen('home'));
+
+// ─── PWA INSTALL PROMPT ───────────────────────────────────────────
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  $id('install-banner').classList.add('show');
+});
+
+$id('install-cta').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  $id('install-banner').classList.remove('show');
+});
+
+$id('install-close').addEventListener('click', () => {
+  $id('install-banner').classList.remove('show');
+});
+
+window.addEventListener('appinstalled', () => {
+  $id('install-banner').classList.remove('show');
+});
+
+// ─── OFFLINE INDICATOR ────────────────────────────────────────────
+function setOnline(online) { document.body.classList.toggle('offline', !online); }
+window.addEventListener('online',  () => setOnline(true));
+window.addEventListener('offline', () => setOnline(false));
+setOnline(navigator.onLine);
+
+// ─── SERVICE WORKER ───────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(console.warn);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────
+refreshHomeUI();
+
+// Restore selected duration pill
+document.querySelectorAll('.dur-pill').forEach(btn => {
+  btn.classList.toggle('sel', parseInt(btn.dataset.min) === selectedMin);
+});
+</script>
+</body>
+</html>

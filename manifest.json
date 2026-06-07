@@ -1,0 +1,44 @@
+{
+  "name": "One Breath",
+  "short_name": "One Breath",
+  "description": "The simplest meditation app. Open. Tap. Breathe.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["health", "lifestyle"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-home.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "label": "Home screen"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start 5-min Session",
+      "short_name": "5 min",
+      "description": "Jump straight into a 5-minute meditation",
+      "url": "/?quick=5",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
